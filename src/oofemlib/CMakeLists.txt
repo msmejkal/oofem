@@ -36,7 +36,7 @@ set (core_unsorted
     ldltfact.C
     inverseit.C subspaceit.C gjacobi.C
     #
-    symcompcol.C compcol.C
+    symcompcol.C compcol.C eigenmtrx.C
     unstructuredgridfield.C
     # 
     loadbalancer.C
@@ -116,6 +116,10 @@ endif ()
 
 if (USE_PARDISO_ORG)
   list (APPEND core_nm pardisoprojectorgsolver.C)
+endif ()
+
+if (USE_EIGEN)
+  list (APPEND core_nm eigensolver.C)
 endif ()
 
 
