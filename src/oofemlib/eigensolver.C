@@ -55,28 +55,14 @@ REGISTER_SparseLinSolver( EigenSolver, ST_Eigen );
 EigenSolver ::EigenSolver( Domain *d, EngngModel *m ) :
     SparseLinearSystemNM( d, m ) 
 {
-    method = NULL;
+    method = "LLT"; // Default method
 }
 
 EigenSolver ::~EigenSolver() {}
 
 void EigenSolver ::initializeFrom( InputRecord &ir )
 {
-    int val = 0;
-    IR_GIVE_OPTIONAL_FIELD( ir, val, "eigenmethod" );
-
-    if ( val == 0 ) {
-        // Default option
-        method = "LLT";
-    } else if ( val == 1 ) {
-        method = "LDLT";
-    } else if ( val == 2 ) {
-        method = "LU";
-    } else if ( val == 3 ) {
-        method = "QR";
-    } else {
-        // ERROR !
-    }
+    IR_GIVE_OPTIONAL_FIELD( ir, method, "eigenmethod" );
 }
 
 
@@ -98,22 +84,22 @@ NM_Status EigenSolver ::solve( SparseMtrx &A, FloatArray &b, FloatArray &x )
     Eigen::VectorXd x_eig; // Allocate vector of RHS
 
     // Create factorization
-    if ( strcmp( method, "LLT" ) == 0 ) {
+    if ( method.compare( "LLT" ) == 0 ) {
 
         Eigen::SimplicialLLT<Eigen::SparseMatrix<double> > A_factorization( A_eig );       
         x_eig = A_factorization.solve( b_eig ); // Solve the system
 
-    } else if ( strcmp( method, "LDLT" ) == 0 ) {
+    } else if ( method.compare( "LDLT" ) == 0 ) {
 
         Eigen::SimplicialLDLT<Eigen::SparseMatrix<double> > A_factorization( A_eig );     
         x_eig = A_factorization.solve( b_eig ); // Solve the system
 
-    } else if ( strcmp( method, "LU" ) == 0 ) {
+    } else if ( method.compare( "LU" ) == 0 ) {
 
         Eigen::SparseLU<Eigen::SparseMatrix<double> > A_factorization( A_eig );      
         x_eig = A_factorization.solve( b_eig ); // Solve the system
 
-    } else if ( strcmp( method, "QR" ) == 0 ) {
+    } else if ( method.compare( "QR" ) == 0 ) {
 
         Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int> > A_factorization( A_eig );
         x_eig = A_factorization.solve( b_eig ); // Solve the system

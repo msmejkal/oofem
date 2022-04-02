@@ -2,7 +2,7 @@ beam2d_1_mod.out
 Homework www sm40 no. 1
 #only momentum influence to the displacements is taken into account
 #beamShearCoeff is artificially enlarged.
-StaticStructural nsteps 3 nmodules 1  lstype 9 smtype 11 eigenmethod 0
+StaticStructural nsteps 3 nmodules 1  lstype 9 smtype 11 eigenmethod "LLT"
 errorcheck
 domain 2dBeam
 OutputManager tstep_all dofman_all element_all

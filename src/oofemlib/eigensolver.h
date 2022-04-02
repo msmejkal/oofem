@@ -47,7 +47,7 @@ namespace oofem {
 class OOFEM_EXPORT EigenSolver : public SparseLinearSystemNM
 {
 private:
-    const char *method;
+    std::string method;
 
 public:
     /**
