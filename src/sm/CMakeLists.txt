@@ -205,6 +205,7 @@ set (sm_material
     Materials/structuralmaterial.C
     Materials/linearelasticmaterial.C
     Materials/isolinearelasticmaterial.C
+    Materials/isolinearelasticmaterialtemperature.C
     Materials/anisolinearelasticmaterial.C
     Materials/ortholinearelasticmaterial.C
     Materials/BoneMaterials/trabbonematerial.C 
@@ -253,6 +254,7 @@ set (sm_material
     Materials/mdm.C
     Materials/micromaterial.C
     Materials/misesmat.C 
+    Materials/misesmattemperature.C 
     Materials/misesmatgrad.C 
     Materials/misesmatnl.C
     Materials/rankinemat.C
