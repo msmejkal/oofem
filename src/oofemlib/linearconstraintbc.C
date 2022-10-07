@@ -96,6 +96,7 @@ void LinearConstraintBC :: giveLocArray(const UnknownNumberingScheme &r_s,  IntA
     // assemble location array
     for ( int _i = 1; _i <= size; _i++ ) {
         Dof *idof = this->domain->giveDofManager( this->dofmans.at(_i) )->giveDofWithID( this->dofs.at(_i) );
+        
         locr.at(_i) = r_s.giveDofEquationNumber(idof);
     }
 

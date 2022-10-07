@@ -1,0 +1,27 @@
+linear_constraint_4.out
+Test of linear constraint condition on a Truss2d element
+LinearStatic nsteps 1 nmodules 0
+domain 2dTruss
+OutputManager tstep_all dofman_all element_all
+ndofman 4 nelem 3 ncrosssect 1 nmat 1 nbc 3 nic 0 nltf 2 nset 3
+Node 1 coords 3  0.  0.  0.
+Node 2 coords 3  2.  0.  0.
+Node 3 coords 3  4.  0.  0.
+Node 4 coords 3  6.  0.  0.
+Truss2d 1 nodes 2 1 2
+Truss2d 2 nodes 2 2 3
+Truss2d 3 nodes 2 3 4
+SimpleCS 1 thick 0.1 width 0.2 material 1 set 1
+IsoLE 1  tAlpha 0.000012  d 1.0  E 1.0  n 0.2
+BoundaryCondition  1 loadTimeFunction 1 dofs 2 1 3 values 2 0.0 0.0 set 2
+BoundaryCondition  2 loadTimeFunction 1 dofs 1 3 values 1 0.0 set 3
+#
+# LinearConstraintBC contributes to the following characteristic terms:
+# lhstype 4 1 2 3 4  - StiffnessMatrix, TangentStiffnessMatrix, SecantStiffnessMatrix, ElasticStiffnessMatrix
+# rhsType 48 - ExternalForcesVector
+LinearConstraintBC 3 loadTimeFunction 1 dofmans 2 2 4 dofs 2 1 1 weights 2 1 1 weightsLtf 2 2 2 rhs -0.15 rhsLtf 1  lhstype 4 1 2 3 4 rhsType 2 150 151
+ConstantFunction 1 f(t) 1.0
+ConstantFunction 2 f(t) 0.5
+Set 1 elementranges {1 2 3}
+Set 2 nodes 1 1
+Set 3 nodes 1 4

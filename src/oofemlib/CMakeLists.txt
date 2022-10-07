@@ -104,6 +104,7 @@ set (core_nm
     linesearch.C
     calmls.C
     staggeredsolver.C
+    nrsolverarclength.C
     )
 
 if (USE_PETSC)
@@ -320,6 +321,8 @@ set (core_bc
     reinforcement.C
     surfacetensionbc.C
     linearconstraintbc.C
+    arclength.C
+    arclengthstd.C
     )
 
 if (USE_PYTHON_EXTENSION)
