@@ -96,14 +96,22 @@ public:
 
     const char *giveClassName() const override { return "ArcLengthMethod"; };
 
-    virtual void compute_g(){};
-    virtual void compute_H(){};
-    virtual void compute_w(){};  
+    virtual void compute_g() = 0;
+    virtual void compute_H() = 0;
+    virtual void compute_w() = 0;  
 
-    virtual void set_du( FloatArray &du_in ) = 0;
-    virtual void set_dLam( double &dLam_in ) = 0;
+    virtual void set_du( const FloatArray &du_in ) = 0;
+    virtual void set_dLam( const double &dLam_in ) = 0;
 
-    void set_Fext( FloatArray &Fext_in ) { this->Fext = Fext_in; };
+    void set_Fext( const FloatArray &Fext_in ) { this->Fext = Fext_in; };
+
+    virtual double give_dLam0() = 0;
+    virtual double give_dL() = 0;
+    virtual double givePsi()    = 0;
+
+    virtual double computIntialGuess( FloatArray &dX, const FloatArray &d, const FloatArray &dXsave ) = 0;
+
+
 
 
 };

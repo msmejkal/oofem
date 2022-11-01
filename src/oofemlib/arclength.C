@@ -47,7 +47,6 @@
 
 
 namespace oofem {
-REGISTER_BoundaryCondition( ArcLengthMethod );
 
 ArcLengthMethod ::ArcLengthMethod( int n, Domain *d ) :
     ActiveBoundaryCondition( n, d ),
@@ -68,7 +67,6 @@ ArcLengthMethod ::~ArcLengthMethod()
 void ArcLengthMethod ::initializeFrom( InputRecord &ir )
 {
     ActiveBoundaryCondition ::initializeFrom( ir );
-    //IR_GIVE_FIELD( ir, dL, _IFT_ArcLengthMethod_dL );
 }
 
 
@@ -110,10 +108,10 @@ void ArcLengthMethod ::assembleVector( FloatArray &answer, TimeStep *tStep,
     nEqArr.at( 1 ) = nEq; 
 
     // rhs
-    FloatArray gNegArr( 1 );
-    gNegArr.at( 1 ) = g;
+    FloatArray gArr( 1 );
+    gArr.at( 1 ) = g;
 
-    answer.assemble( gNegArr, nEqArr );
+    answer.assemble( gArr, nEqArr );
 }
 
 } // namespace oofem

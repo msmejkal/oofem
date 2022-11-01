@@ -64,6 +64,7 @@ void StandardArcLengthMethod ::initializeFrom( InputRecord &ir )
     ArcLengthMethod ::initializeFrom( ir );
     IR_GIVE_FIELD( ir, dL, _IFT_StandardArcLengthMethod_dL );
     IR_GIVE_FIELD( ir, Psi, _IFT_StandardArcLengthMethod_Psi );
+    IR_GIVE_FIELD( ir, dLam0, _IFT_StandardArcLengthMethod_dLam0);
 }
 
 void StandardArcLengthMethod ::compute_g()
@@ -81,5 +82,32 @@ void StandardArcLengthMethod ::compute_w()
     this->w = 2 * this->dLam * this->Psi * this->Psi * this->Fext.computeSquaredNorm();
 }
 
+double StandardArcLengthMethod::computIntialGuess(FloatArray& dX, const FloatArray& d, const FloatArray& dXsave) {
+    int neq = dX.giveSize();
+
+    double dLam_in1 = this->dL / sqrt( d.dotProduct( d ) + this->Psi * this->Psi * this->Fext.dotProduct( this->Fext ) );
+    double dLam_in2 = -dLam_in1;
+
+    FloatArray duProv1 = d;
+    FloatArray duProv2 = d;
+    duProv1.times( dLam_in1 );
+    duProv2.times( dLam_in2 );
+    duProv1.at( neq ) = dLam_in1;
+    duProv2.at( neq ) = dLam_in2;
+
+    double DP1 = dXsave.dotProduct( duProv1 );
+    double DP2 = dXsave.dotProduct( duProv2 );
+
+    double dLam_in;
+    if ( DP1 >= DP2 ) {
+        dLam_in = dLam_in1;
+        dX      = duProv1;
+    } else if ( DP1 < DP2 ) {
+        dLam_in = dLam_in2;
+        dX      = duProv2;
+    }
+
+    return dLam_in;
+}
 
 } // namespace oofem

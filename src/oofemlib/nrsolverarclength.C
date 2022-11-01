@@ -64,19 +64,9 @@ namespace oofem {
 REGISTER_SparseNonLinearSystemNM( NRSolverArcLength )
 
     NRSolverArcLength ::NRSolverArcLength( Domain *d, EngngModel *m ) :
-    NRSolver( d, m ),
-    IsArcLengthBC( false )
+    NRSolver( d, m )
 {
-    // Find out if arc length method is applied and obtain the BC pointer
-    for ( size_t i = 0; i < domain->giveBcs().size(); i++ ) {
-        auto &bc = domain->giveBcs()[i];
-        auto salm = dynamic_cast<StandardArcLengthMethod *>( bc.get() );
-        if ( salm ) {
-            this->IsArcLengthBC = true;
-            this->ALMtype = "standard";
-            break;
-        }
-    }
+
 }
 
 
@@ -88,6 +78,30 @@ NRSolverArcLength ::~NRSolverArcLength()
 void NRSolverArcLength ::initializeFrom( InputRecord &ir )
 {
     NRSolver ::initializeFrom( ir );
+    int bcnum; 
+    IR_GIVE_FIELD( ir, bcnum, _IFT_NRSolverArcLength_albcnum ); // Obtain number of arclength BC
+
+    auto &bc  = domain->giveBcs()[bcnum-1];
+
+    //std::shared_ptr<ArcLengthMethod> aa( dynamic_cast<ArcLengthMethod *>( bc.get() ) );
+    //this->alm = aa;
+
+    this->alm = dynamic_cast<ArcLengthMethod *>( bc.get() );
+
+    // Find out if arc length method is applied and obtain the BC pointer
+    //for ( size_t i = 0; i < domain->giveBcs().size(); i++ ) {
+    //    auto &bc  = domain->giveBcs()[i];
+    //    auto alm0 = dynamic_cast<ArcLengthMethod* >( bc.get() );
+
+    //    if ( alm0 ) {
+    //        this->IsArcLengthBC = true;
+    //        this->alm           = alm0;
+    //        //std::shared_ptr<ArcLengthMethod> aa( alm0 );
+    //        //this->alm = aa;
+    //        //this->alm( alm ); 
+    //        break;
+    //    }
+    //}
 }
 
 
@@ -146,55 +160,54 @@ NRSolverArcLength ::solve( SparseMtrx &k, FloatArray &R, FloatArray *R0,
 
 
     /////////////////////////////////////
-    // Find out if arc length method is applied and obtain the BC pointer
-    //bool IsArcLengthBC = false;
-    //std::string ALMtype;
-    //ArcLengthMethod *alm;
-    //for ( size_t i = 0; i < domain->giveBcs().size(); i++ ) {
-    //    auto &bc = domain->giveBcs()[i];
-    //    alm = dynamic_cast<ArcLengthMethod *>( bc.get() );
-    //    if ( alm ) {
-    //        IsArcLengthBC = true;
-    //        auto salm = dynamic_cast<StandardArcLengthMethod *>( alm );
-    //        if ( salm ) { // If standard ALM
-    //            ALMtype = "standard";
-    //        } else {
-    //            // Throw exception
-    //        }
-
-    //        break;
-    //    }
-    //}
-    StandardArcLengthMethod *salm;
-    for ( size_t i = 0; i < domain->giveBcs().size(); i++ ) {
-        auto &bc = domain->giveBcs()[i];
-        salm     = dynamic_cast<StandardArcLengthMethod *>( bc.get() );
-        if ( salm ) {
-            break;
-        }
-    }
 
     // Get vector of external forces, displacement increments and lamda increments
     FloatArray Fext_in, du_in, RTmod;
-    double dLam_in, LamN;
+    double dLam_in, dLam_in1, dLam_in2, LamN;
+    IntArray inds;
+
+    if ( tStep->isTheFirstStep() ) {
+        this->initiate_dXsave( neq );
+    }
 
     if ( IsArcLengthBC ) {
         Fext_in.resize( neq - 1 );
         du_in.resize( neq - 1 );
+        inds.resize( neq - 1 );
 
         for ( int i = 1; i < neq; i++ ) {
             Fext_in.at( i ) = RT.at( i );
-            du_in.at( i )   = dX.at( i );
+            inds.at( i )    = i;
         }
+
+        LamN    = X.at( neq ); // Value of current lambda
+
+
+        // Obtain initial guesses 
+        FloatArray zeros;
+        zeros.resize( neq - 1 );
+        this->alm->set_Fext( zeros );
+        this->alm->set_du( zeros );
+        this->alm->compute_H();
         
-        dLam_in = 1.118033;
-        //dLam_in = alm->give_dL();
-        LamN    = X.at( neq );
-        this->setArcLengthPar( Fext_in, du_in, dLam_in, true, salm);
+        engngModel->updateComponent( tStep, NonLinearLhs, domain );
+        k.at( neq, neq ) = 1.0;
+
+        FloatArray d;
+        linSolver->solve( k, RT, d ); // Compute vector d
+
+        dLam_in = this->alm->computIntialGuess( dX, d, this->dXsave );
+
+        du_in.beSubArrayOf( dX, inds );
+        X.add( dX );
+        
+        this->setArcLengthPar( Fext_in, du_in, dLam_in, true);
     }
     /////////////////////////////////////
 
     engngModel->updateComponent( tStep, NonLinearLhs, domain );
+
+
     if ( this->prescribedDofsFlag ) {
         if ( !prescribedEqsInitFlag ) {
             this->initPrescribedEqs();
@@ -213,7 +226,7 @@ NRSolverArcLength ::solve( SparseMtrx &k, FloatArray &R, FloatArray *R0,
                 }
                 dLam_in = dX.at( neq );
 
-                this->setArcLengthPar( Fext_in, du_in, dLam_in, false, salm);
+                this->setArcLengthPar( Fext_in, du_in, dLam_in, false);
             }
         }
         /////////////////////////////////////
@@ -245,6 +258,9 @@ NRSolverArcLength ::solve( SparseMtrx &k, FloatArray &R, FloatArray *R0,
             break;
         } else if ( converged && ( nite >= minIterations ) ) {
             status |= NM_Success;
+            //////
+            this->dXsave = dX;
+            //////
             break;
         } else if ( nite >= nsmax ) {
             OOFEM_LOG_DEBUG( "Maximum number of iterations reached\n" );
@@ -266,9 +282,6 @@ NRSolverArcLength ::solve( SparseMtrx &k, FloatArray &R, FloatArray *R0,
             //            if ( engngModel->giveProblemScale() == macroScale ) {
             //              k.writeToFile("k.txt");
             //            }
-            //k.printYourself();
-            //rhs.printYourself();
-            //dX.printYourself();
             linSolver->solve( k, rhs, ddX );
         }
 
@@ -364,22 +377,17 @@ NRSolverArcLength ::solve( SparseMtrx &k, FloatArray &R, FloatArray *R0,
 }
 
 
-void NRSolverArcLength::setArcLengthPar( FloatArray &Fext_in, FloatArray &du_in, double &dLam_in, 
-                                        bool firstEval, StandardArcLengthMethod *salm)
+void NRSolverArcLength::setArcLengthPar(const FloatArray &Fext_in, const FloatArray &du_in, double dLam_in, bool firstEval)
 {    
-    //StandardArcLengthMethod *salm; // This needs to be modified, works only for standard
-    //if ( ALMtype == "standard" ) {
-    //    salm = dynamic_cast<StandardArcLengthMethod *>( alm );
-    //} else {
-    //    // Throw exception
-    //}
-
     if ( firstEval ) {
-        salm->set_Fext( Fext_in );
+        this->alm->set_Fext( Fext_in );
     }
-    salm->set_du( du_in );
-    salm->set_dLam( dLam_in );
-    salm->setBaseParameters();
+    this->alm->set_du( du_in );
+    this->alm->set_dLam( dLam_in );
+
+    this->alm->compute_g();
+    this->alm->compute_H();
+    this->alm->compute_w();
 };
 
 } // end namespace oofem

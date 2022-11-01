@@ -52,6 +52,7 @@
 //@{
 #define _IFT_StandardArcLengthMethod_dL "dl"
 #define _IFT_StandardArcLengthMethod_Psi "psi"
+#define _IFT_StandardArcLengthMethod_dLam0 "dlam0"
 //@}
 
 namespace oofem {
@@ -65,6 +66,7 @@ protected:
     double Psi;
     FloatArray du;
     double dLam;
+    double dLam0;
 
 public:
     StandardArcLengthMethod( int n, Domain *d );
@@ -77,21 +79,19 @@ public:
     const char *giveClassName() const override { return "StandardArcLengthMethod"; };
 
 
-    virtual void compute_g() override;
-    virtual void compute_H() override;
-    virtual void compute_w() override;
+    void compute_g() override;
+    void compute_H() override;
+    void compute_w() override;
 
-    void set_du( FloatArray &du_in ) { this->du = du_in; };
-    void set_dLam( double &dLam_in ) { this->dLam = dLam_in; };
+    void set_du( const FloatArray &du_in ) override { this->du = du_in; };
+    void set_dLam( const double &dLam_in ) override { this->dLam = dLam_in; };
 
-    void setBaseParameters()
-    {
-        this->compute_g();
-        this->compute_H();
-        this->compute_w();
-    }
 
     double give_dL() { return dL; };
+    double givePsi() { return Psi; };
+    double give_dLam0() override { return dLam0; };
+
+    double computIntialGuess( FloatArray &dX, const FloatArray &d, const FloatArray &dXsave ) override;
 
 };
 } // namespace oofem

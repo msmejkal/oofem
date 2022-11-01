@@ -53,6 +53,7 @@
 ///@name Input fields for NRSolver
 //@{
 #define _IFT_NRSolverArcLength_Name "nrsolverarclength"
+#define _IFT_NRSolverArcLength_albcnum "albcnum"
 //@}
 
 namespace oofem {
@@ -65,7 +66,9 @@ class EngngModel;
 class OOFEM_EXPORT NRSolverArcLength : public NRSolver
 {
     bool IsArcLengthBC;
-    std::string ALMtype;
+    //std::shared_ptr<ArcLengthMethod> alm;
+    ArcLengthMethod *alm;
+    FloatArray dXsave;
 
 public:
     NRSolverArcLength( Domain *d, EngngModel *m );
@@ -80,10 +83,11 @@ public:
     void initializeFrom( InputRecord &ir ) override;
     
     const char *giveClassName() const override { return "NRSolverArcLength"; }
-    virtual const char *giveInputRecordName() const { return _IFT_NRSolverArcLength_Name; }
+    virtual const char *giveInputRecordName() const override { return _IFT_NRSolverArcLength_Name; }
 
-    void setArcLengthPar( FloatArray &Fext_in, FloatArray &du_in, double &dLam_in, bool firstEval, StandardArcLengthMethod *salm);
+    void setArcLengthPar(const FloatArray &Fext_in, const FloatArray &du_in, double dLam_in, bool firstEval);
 
+    void initiate_dXsave( int n ) { this->dXsave.resize( n ); };
 };
 } // end namespace oofem
 #endif // nrsolver_h
